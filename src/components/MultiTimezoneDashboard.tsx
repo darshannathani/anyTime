@@ -13,7 +13,7 @@ const TIMEZONES = moment.tz.names().map((tz) => ({
   offset: moment.tz(tz).utcOffset() / 60,
 }));
 
-const TimeZoneCard = ({ city, dateTime, onRemove, onTimeChange, index, moveCard }) => {
+const TimeZoneCard = ({ city, dateTime, onRemove, onTimeChange, index, moveCard }: { city: string, dateTime: moment.Moment, onRemove: (index: number) => void, onTimeChange: (newTime: number, index: number) => void, index: number, moveCard: (fromIndex: number, toIndex: number) => void }) => {
   const [{ isDragging }, drag] = useDrag({
     type: 'CARD',
     item: { index },
@@ -24,7 +24,7 @@ const TimeZoneCard = ({ city, dateTime, onRemove, onTimeChange, index, moveCard 
 
   const [, drop] = useDrop({
     accept: 'CARD',
-    hover(item) {
+    hover(item: { index: number }) {
       if (item.index !== index) {
         moveCard(item.index, index);
         item.index = index;
@@ -70,7 +70,7 @@ const MultiTimezoneDashboard = () => {
   ]);
   const [selectedDate, setSelectedDate] = useState(moment().toDate());
   const [inputValue, setInputValue] = useState('');
-  const [filteredItems, setFilteredItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState<{ name: string; offset: number; }[]>([]);
   const [darkMode, setDarkMode] = useState(false);
   const [reverseOrder, setReverseOrder] = useState(false);
 
@@ -93,8 +93,13 @@ const MultiTimezoneDashboard = () => {
     }
   }, [darkMode]);
 
-  const updateAllTimes = (referenceDateTime, referenceIndex) => {
-    setLocations(locations.map((loc, index) => {
+  interface Location {
+    city: string;
+    dateTime: moment.Moment;
+  }
+
+  const updateAllTimes = (referenceDateTime: moment.Moment, referenceIndex: number): void => {
+    setLocations(locations.map((loc: Location, index: number) => {
       if (index === referenceIndex) {
         return { ...loc, dateTime: referenceDateTime };
       } else {
@@ -104,7 +109,7 @@ const MultiTimezoneDashboard = () => {
     }));
   };
 
-  const addLocation = (city) => {
+  const addLocation = (city: string): void => {
     if (!locations.some((loc) => loc.city === city)) {
       const newDateTime = moment(locations[0].dateTime).tz(city);
       setLocations([{ city, dateTime: newDateTime }, ...locations]);
@@ -112,34 +117,36 @@ const MultiTimezoneDashboard = () => {
     }
   };
 
-  const removeLocation = (index) => {
+  const removeLocation = (index: number): void => {
     setLocations(locations.filter((_, i) => i !== index));
   };
 
-  const handleTimeChange = (newTime, index) => {
+  const handleTimeChange = (newTime: number, index: number): void => {
     const updatedDateTime = moment(locations[index].dateTime)
       .hours(Math.floor(newTime))
       .minutes((newTime % 1) * 60);
     updateAllTimes(updatedDateTime, index);
   };
 
-  const handleDateChange = (date) => {
-    setSelectedDate(date);
-    const newDateTime = moment(locations[0].dateTime)
-      .year(date.getFullYear())
-      .month(date.getMonth())
-      .date(date.getDate());
-    updateAllTimes(newDateTime, 0);
+  const handleDateChange = (date: Date | undefined): void => {
+    if (date) {
+      setSelectedDate(date);
+      const newDateTime = moment(locations[0].dateTime)
+        .year(date.getFullYear())
+        .month(date.getMonth())
+        .date(date.getDate());
+      updateAllTimes(newDateTime, 0);
+    }
   };
 
-  const moveCard = (fromIndex, toIndex) => {
-    const updatedLocations = [...locations];
+  const moveCard = (fromIndex: number, toIndex: number): void => {
+    const updatedLocations: Location[] = [...locations];
     const [movedCard] = updatedLocations.splice(fromIndex, 1);
     updatedLocations.splice(toIndex, 0, movedCard);
     setLocations(updatedLocations);
   };
 
-  const handleKeyDown = (event) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
     if (event.key === 'Enter' && filteredItems.length > 0) {
       addLocation(filteredItems[0].name);
     }
