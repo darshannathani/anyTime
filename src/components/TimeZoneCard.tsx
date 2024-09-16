@@ -44,6 +44,7 @@ export const TimeZoneCard: React.FC<TimeZoneCardProps> = ({ city, dateTime, onRe
       labels.push(label);
       i++;
     }
+    labels.push('12 AM');
     return labels
 };
 
